@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>n8n AI Chat</title>
+    <style>
+        body {
+            max-width: 600px;
+            margin: 2em auto;
+            font-family: Arial, sans-serif;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100px;
+        }
+
+        button {
+            margin-top: 0.5em;
+            padding: 0.5em 1em;
+        }
+
+        #response {
+            margin-top: 1em;
+            white-space: pre-wrap;
+            background: #eee;
+            padding: 1em;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Ask AI</h2>
+    <textarea id="query" placeholder="Type your question here..."></textarea>
+    <br />
+    <button id="sendBtn">Send</button>
+    <div id="response"></div>
+
+    <script>
+        const webhookUrl = 'https://theranordic.app.n8n.cloud/webhook/6376bfe6-2fe7-42b8-9f1d-82689ccbddeb/chat';
+
+        document.getElementById('sendBtn').onclick = async () => {
+            const query = document.getElementById('query').value.trim();
+            if (!query) return alert('Please enter a question.');
+
+            document.getElementById('response').textContent = 'Loading...';
+            document.getElementById('query').value = '';
+
+
+            try {
+
+
+                let sessionId = localStorage.getItem('sessionId');
+                if (!sessionId) {
+                    sessionId = 'session-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                    localStorage.setItem('sessionId', sessionId);
+                }
+
+                const res = await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: query,
+                        sessionId: sessionId
+                    })
+                });
+                if (!res.ok) throw new Error('Network error');
+
+                const data = await res.json();
+                const reply = data.response[0].output || data.text || JSON.stringify(data);
+
+                document.getElementById('response').textContent = typeof reply === 'object' ? JSON.stringify(reply, null, 2) : reply;
+
+            } catch (err) {
+                document.getElementById('response').textContent = 'Error: ' + err.message;
+            }
+        };
+    </script>
+</body>
+
+</html>
